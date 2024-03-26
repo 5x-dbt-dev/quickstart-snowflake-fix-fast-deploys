@@ -2,3 +2,5 @@ dagster
 dagit
 requests
 dagster_postgres
+dagster_snowflake
+dagster_snowflake_pandas
