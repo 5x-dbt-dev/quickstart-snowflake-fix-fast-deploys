@@ -52,6 +52,6 @@ jobs:
 
       - name: Deploy to EKS with Helm
         run: |
-          helm upgrade dagster-dev dagster/dagster --namespace dev -f .helm/dev-values.yaml --set "dagster-user-deployments.deployments[0].image.tag=$IMAGE_TAG" --wait
+          helm upgrade dagster-dev dagster/dagster --namespace dev -f .helm/dev-values.yaml --set "dagster-user-deployments.deployments[1].image.tag=$IMAGE_TAG" --wait
         env:
           IMAGE_TAG: ${{ env.IMAGE_TAG }}
