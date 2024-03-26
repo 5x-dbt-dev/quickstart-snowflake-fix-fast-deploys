@@ -4,3 +4,11 @@ requests
 dagster_postgres
 dagster_snowflake
 dagster_snowflake_pandas
+snowflake-connector-python[pandas],
+dagster-cloud
+boto3
+pandas
+matplotlib
+textblob
+tweepy
+wordcloud
