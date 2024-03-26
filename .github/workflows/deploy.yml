@@ -1,72 +1,56 @@
-name: Serverless Prod Deployment
+name: Build, Push to AWS ECR, and Deploy to EKS
+
 on:
   push:
     branches:
-      - "main"
-      - "master"
-concurrency:
-  # Cancel in-progress deploys to main branch
-  group: ${{ github.ref }}
-  cancel-in-progress: true
-env:
-  DAGSTER_CLOUD_URL: ${{ secrets.DAGSTER_CLOUD_URL }}
-  DAGSTER_CLOUD_API_TOKEN: ${{ secrets.DAGSTER_CLOUD_API_TOKEN }}
-  ENABLE_FAST_DEPLOYS: 'true'
+      - main
 
 jobs:
-  dagster_cloud_default_deploy:
-    name: Dagster Serverless Deploy
+  build-push-deploy:
     runs-on: ubuntu-latest
-    outputs:
-      build_info: ${{ steps.parse-workspace.outputs.build_info }}
-    
+    name: Build Docker Image, Push to ECR, and Deploy to EKS
+
     steps:
-      - name: Parse cloud workspace
-        if: env.ENABLE_FAST_DEPLOYS != 'true'
-        id: parse-workspace
-        uses: dagster-io/dagster-cloud-action/actions/utils/parse_workspace@v0.1
-        with:
-          dagster_cloud_file: dagster_cloud.yaml
+      - name: Check Out Repo
+        uses: actions/checkout@v2
 
-      - name: Checkout
-        if: env.ENABLE_FAST_DEPLOYS == 'true'
-        uses: actions/checkout@v3
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
         with:
-          ref: ${{ github.head_ref }}
-          path: project-repo
-          
-      - name: Build and deploy Python executable
-        if: env.ENABLE_FAST_DEPLOYS == 'true'
-        uses: dagster-io/dagster-cloud-action/actions/build_deploy_python_executable@pex-v0.1
-        with:
-          dagster_cloud_file: "$GITHUB_WORKSPACE/project-repo/dagster_cloud.yaml"
-          build_output_dir: "$GITHUB_WORKSPACE/build"
-          python_version: "3.8"
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_KEY }}
+          aws-region: us-east-1
+
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Build and Push Image to ECR
+        id: build-and-push
+        run: |
+          ECR_REGISTRY=153475762833.dkr.ecr.us-east-1.amazonaws.com
+          IMAGE_TAG=$(echo $GITHUB_SHA | cut -c1-7)
+          echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
+          docker build -t $ECR_REGISTRY/my-dagster-app-two:$IMAGE_TAG .
+          docker push $ECR_REGISTRY/my-dagster-app-two:$IMAGE_TAG
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          AWS_DEFAULT_REGION: us-east-1
+          AWS_REGION: us-east-1
 
-  dagster_cloud_docker_deploy:
-    name: Dagster Serverless Docker Deploy
-    runs-on: ubuntu-latest
-    if: needs.dagster_cloud_default_deploy.outputs.build_info
-    needs: dagster_cloud_default_deploy
-    strategy:
-      fail-fast: false
-      matrix:
-        location: ${{ fromJSON(needs.dagster_cloud_default_deploy.outputs.build_info) }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-        with:
-          ref: ${{ github.head_ref }}
-      - name: Build and deploy to Dagster Cloud serverless
-        uses: dagster-io/dagster-cloud-action/actions/serverless_prod_deploy@v0.1
-        with:
-          dagster_cloud_api_token: ${{ secrets.DAGSTER_CLOUD_API_TOKEN }}
-          location: ${{ toJson(matrix.location) }}
-          # Uncomment to pass through Github Action secrets as a JSON string of key-value pairs
-          # env_vars: ${{ toJson(secrets) }}
-          organization_id: ${{ secrets.ORGANIZATION_ID }}
+      - name: Update kubeconfig
+        run: aws eks update-kubeconfig --name dagster-poc --region us-east-1
+
+      - name: Install Helm (if not already installed)
+        run: |
+          curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+
+      - name: Add Helm repository (if your chart is in a repository)
+        run: helm repo add dagster https://dagster-io.github.io/helm
+
+      - name: Update Helm repositories
+        run: helm repo update
+
+      - name: Deploy to EKS with Helm
+        run: |
+          helm upgrade dagster-dev dagster/dagster --namespace dev -f .helm/dev-values.yaml --set "dagster-user-deployments.deployments[0].image.tag=$IMAGE_TAG" --wait
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
+          IMAGE_TAG: ${{ env.IMAGE_TAG }}
