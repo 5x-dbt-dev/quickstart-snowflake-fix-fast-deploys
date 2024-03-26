@@ -8,7 +8,7 @@ from dagster import (
 from dagster_snowflake import build_snowflake_io_manager
 from dagster_snowflake_pandas import SnowflakePandasTypeHandler
 
-from . import assets
+import assets
 
 daily_refresh_schedule = ScheduleDefinition(
     job=define_asset_job(name="all_assets_job"), cron_schedule="0 0 * * *"
