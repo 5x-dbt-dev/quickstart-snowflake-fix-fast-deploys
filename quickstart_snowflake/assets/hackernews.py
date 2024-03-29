@@ -13,7 +13,7 @@ from dagster import MetadataValue, OpExecutionContext, asset
 @asset(group_name="hackernews", compute_kind="HackerNews API")
 def hackernews_topstory_ids() -> pd.DataFrame:
     """
-    Get up to 500 top stories from the HackerNews topstories endpoint.
+    Get up to 500 top stories from the HackerNews topstories endpoint testing
 
     API Docs: https://github.com/HackerNews/API#new-top-and-best-stories
     """
