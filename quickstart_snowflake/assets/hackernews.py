@@ -39,7 +39,7 @@ def hackernews_topstories(
         if len(results) % 20 == 0:
             context.log.info(f"Got {len(results)} items so far.")
 
-    df = pd.DataFrame(results)
+    df = pd.DataFrame(results).set_index("by")
 
     # Dagster supports attaching arbitrary metadata to asset materializations. This metadata will be
     # shown in the run logs and also be displayed on the "Activity" tab of the "Asset Details" page in the UI.

@@ -37,3 +37,6 @@ def quickstart_snowflake():
         ),
         daily_refresh_schedule,
     ]
+
+if __name__ == '__main__':
+    quickstart_snowflake()
