@@ -25,12 +25,12 @@ def quickstart_snowflake():
                     # Read about using environment variables and secrets in Dagster:
                     # https://docs.dagster.io/guides/dagster/using-environment-variables-and-secrets
                     {
-                        "account": {"env": "SNOWFLAKE_ACCOUNT"},
-                        "user": {"env": "SNOWFLAKE_USER"},
-                        "password": {"env": "SNOWFLAKE_PASSWORD"},
-                        "warehouse": {"env": "SNOWFLAKE_WAREHOUSE"},
-                        "database": {"env": "SNOWFLAKE_DATABASE"},
-                        "schema": {"env": "SNOWFLAKE_SCHEMA"},
+                        "account": "rb83340.europe-west4.gcp",
+                        "user": "ranjuramesh",
+                        "password": "NpI9UcA8Cn#9",
+                        "warehouse": "compute_wh",
+                        "database": "rawdata_db",
+                        "schema": "testing",
                     }
                 ),
             },
