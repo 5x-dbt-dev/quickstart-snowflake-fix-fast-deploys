@@ -30,7 +30,7 @@ def quickstart_snowflake():
                         "password": "NpI9UcA8Cn#9",
                         "warehouse": "compute_wh",
                         "database": "rawdata_db",
-                        "schema": "testing",
+                        "schema": "Dagster",
                     }
                 ),
             },
